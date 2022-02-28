@@ -1,0 +1,9 @@
+rules:
+- id: command_injection
+  patterns:
+    - pattern-either:
+      - pattern: Runtime.getRuntime().exec(...)
+      - pattern: new ProcessBuilder(...)
+  message: Semgrep found a match
+  languages: [java]
+  severity: WARNING
