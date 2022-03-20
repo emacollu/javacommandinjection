@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,31 +19,26 @@ import java.io.InputStreamReader;
  * Time: 17:38
  */
 @RestController
-
 public class CommandController {
-    Logger logger = LoggerFactory.getLogger(CommandController.class);
+    static Logger log = LoggerFactory.getLogger(CommandController.class);
 
     @GetMapping
-    public ResponseEntity<String> execCommand(@RequestParam("command") String command) {
-        logger.info("command {}", command);
-        StringBuilder response = new StringBuilder("Response command is:<br>");
-        try {
-            Process p = Runtime.getRuntime().exec(command);
-            p.waitFor();
+    public ResponseEntity<String> execCommand(@Nullable @RequestParam("command") String command) {
+        log.info("command {}", command);
+        if(command == null)
+            return new ResponseEntity<>("There is no command", HttpStatus.NO_CONTENT);
 
-            response.append(readResponseProcess(p));
-        } catch (IOException e) {
-            logger.error("Error executing command", e);
-        } catch (InterruptedException e) {
-            logger.error("Interrupt Exception", e);
-            Thread.currentThread().interrupt();
+        Process p = ExecCommand.execCommand(command);
+        if (p != null) {
+            String response ="Response command is:<br>" + readResponseProcess(p);
+            return new ResponseEntity<>(response, HttpStatus.OK);
         }
-        return new ResponseEntity<>(response.toString(), HttpStatus.OK);
+        return new ResponseEntity<>("There is an error", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @GetMapping("pb")
     public ResponseEntity<String> execCommandPB(@RequestParam("command") String command) {
-        logger.info("pb command {}", command);
+        log.info("pb command {}", command);
         StringBuilder response = new StringBuilder("Response command is:<br>");
         try {
             ProcessBuilder processBuilder = new ProcessBuilder(command.split(" "));
@@ -51,9 +47,9 @@ public class CommandController {
 
             response.append(readResponseProcess(p));
         } catch (IOException e) {
-            logger.error("Error executing command", e);
+            log.error("Error executing command", e);
         } catch (InterruptedException e) {
-            logger.error("Interrupt Exception", e);
+            log.error("Interrupt Exception", e);
             Thread.currentThread().interrupt();
         }
         return new ResponseEntity<>(response.toString(), HttpStatus.OK);
@@ -64,20 +60,20 @@ public class CommandController {
         try {
             String line;
             BufferedReader error = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-            while((line = error.readLine()) != null){
+            while ((line = error.readLine()) != null) {
                 response.append(line).append("<br>");
-                logger.debug(line);
+                log.debug(line);
             }
             error.close();
 
             BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            while((line=input.readLine()) != null){
+            while ((line = input.readLine()) != null) {
                 response.append(line).append("<br>");
-                logger.debug(line);
+                log.debug(line);
             }
             input.close();
         } catch (IOException e) {
-            logger.error("Error executing command", e);
+            log.error("Error executing command", e);
         }
         return response.toString();
     }
