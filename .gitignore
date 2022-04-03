@@ -35,3 +35,4 @@ build/
 /flowGraph/
 /.mvn/
 **/.cache/
+/codeql_source/

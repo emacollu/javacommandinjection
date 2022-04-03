@@ -11,12 +11,14 @@
 	<groupId>com.manydesigns</groupId>
 	<artifactId>javacommandinjection</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>war</packaging>
 	<name>javacommandinjection</name>
 	<description>Demo java command injection with Spring Boot</description>
+
 	<properties>
 		<java.version>11</java.version>
+		<lombokSource>${project.basedir}/src/main/java</lombokSource>
 	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -39,6 +41,10 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -46,8 +52,47 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</exclude>
+					</excludes>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>dlombok</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.projectlombok</groupId>
+						<artifactId>lombok-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<phase>generate-sources</phase>
+								<goals>
+									<goal>delombok</goal>
+								</goals>
+							</execution>
+						</executions>
+						<configuration>
+							<sourceDirectory>${lombokSource}</sourceDirectory>
+							<verbose>true</verbose>
+							<formatPreferences>
+								<generateDelombokComment>skip</generateDelombokComment>
+								<javaLangAsFQN>skip</javaLangAsFQN>
+								<suppressWarnings>skip</suppressWarnings>
+							</formatPreferences>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 </project>

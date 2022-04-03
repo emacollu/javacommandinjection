@@ -1,7 +1,6 @@
 package com.manydesigns.javacommandinjection;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
@@ -18,22 +17,21 @@ import java.io.InputStreamReader;
  * Date: 03/01/22
  * Time: 17:38
  */
-@RestController
+@RestController @Slf4j
 public class CommandController {
-    static Logger log = LoggerFactory.getLogger(CommandController.class);
 
     @GetMapping
     public ResponseEntity<String> execCommand(@Nullable @RequestParam("command") String command) {
         log.info("command {}", command);
-        if(command == null)
-            return new ResponseEntity<>("There is no command", HttpStatus.NO_CONTENT);
-
-        Process p = ExecCommand.execCommand(command);
-        if (p != null) {
-            String response ="Response command is:<br>" + readResponseProcess(p);
-            return new ResponseEntity<>(response, HttpStatus.OK);
+        if(command != null) {
+            Process p = ExecCommand.execCommand(command);
+            if (p != null) {
+                String response = "Response command is:<br>" + readResponseProcess(p);
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            }
+            return new ResponseEntity<>("There is an error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return new ResponseEntity<>("There is an error", HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>("There is no command", HttpStatus.NO_CONTENT);
     }
 
     @GetMapping("pb")
