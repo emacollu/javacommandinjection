@@ -1,12 +1,13 @@
 package com.manydesigns.javacommandinjection;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -19,6 +20,13 @@ import java.io.InputStreamReader;
  */
 @RestController @Slf4j
 public class CommandController {
+
+    private final TaskExecutor taskExecutor;
+
+    @Autowired
+    public CommandController(TaskExecutor taskExecutor) {
+        this.taskExecutor = taskExecutor;
+    }
 
     @GetMapping
     public ResponseEntity<String> execCommand(@Nullable @RequestParam("command") String command) {
@@ -51,6 +59,48 @@ public class CommandController {
             Thread.currentThread().interrupt();
         }
         return new ResponseEntity<>(response.toString(), HttpStatus.OK);
+    }
+
+    @GetMapping("thread")
+    public ResponseEntity<String>  execCommandThread(@Nullable @RequestParam("command") String command) {
+        log.info("execCommandThread {}", command);
+        if(command != null) {
+            taskExecutor.execute(() -> {
+                Process p = ExecCommand.execCommand(command);
+                if (p != null) {
+                    String response = "Response command is:<br>" + readResponseProcess(p);
+                    log.info("thread {} executed command:\n{}", Thread.currentThread().getName(), response);
+                }
+            });
+            return new ResponseEntity<>("thread running", HttpStatus.OK);
+        }
+        return new ResponseEntity<>("There is no command", HttpStatus.NO_CONTENT);
+    }
+
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String>  execCommandPost(@RequestBody Command command) {
+        log.info("execCommandPost {}", command);
+        Process p = ExecCommand.execCommand(command.getValue());
+        if (p != null) {
+            String response = "Response command is:<br>" + readResponseProcess(p);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        return new ResponseEntity<>("There is an error", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @GetMapping("sanity")
+    public ResponseEntity<String>  execCommandSanity(@RequestParam("command") String command) {
+        log.info("execCommandSanity {}", command);
+
+        String escape = command.replaceAll("[;&|`]+","\\u" + Integer.toHexString('/' | 0x10000).substring(1)); //Unicode
+        log.info("Stripped: {}", escape);
+
+        Process p = ExecCommand.execCommand(escape);
+        if (p != null) {
+            String response = "Response command is:<br>" + readResponseProcess(p);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        return new ResponseEntity<>("There is an error", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     String readResponseProcess(Process p) {
