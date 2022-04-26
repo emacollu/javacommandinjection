@@ -31,7 +31,7 @@ public class CommandController {
     @GetMapping
     public ResponseEntity<String> execCommand(@Nullable @RequestParam("command") String command) {
         log.info("command {}", command);
-        if(command != null) {
+        if (command != null) {
             Process p = ExecCommand.execCommand(command);
             if (p != null) {
                 String response = "Response command is:<br>" + readResponseProcess(p);
@@ -62,9 +62,12 @@ public class CommandController {
     }
 
     @GetMapping("thread")
-    public ResponseEntity<String>  execCommandThread(@Nullable @RequestParam("command") String command) {
+    public ResponseEntity<String> execCommandThread(@Nullable @RequestParam("command") String command) {
         log.info("execCommandThread {}", command);
-        if(command != null) {
+        if (command == null ||
+                command.startsWith("ls")) {
+            return new ResponseEntity<>("There is no command", HttpStatus.NO_CONTENT);
+        } else {
             taskExecutor.execute(() -> {
                 Process p = ExecCommand.execCommand(command);
                 if (p != null) {
@@ -74,11 +77,10 @@ public class CommandController {
             });
             return new ResponseEntity<>("thread running", HttpStatus.OK);
         }
-        return new ResponseEntity<>("There is no command", HttpStatus.NO_CONTENT);
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String>  execCommandPost(@RequestBody Command command) {
+    public ResponseEntity<String> execCommandPost(@RequestBody Command command) {
         log.info("execCommandPost {}", command);
         Process p = ExecCommand.execCommand(command.getValue());
         if (p != null) {
@@ -89,10 +91,10 @@ public class CommandController {
     }
 
     @GetMapping("sanity")
-    public ResponseEntity<String>  execCommandSanity(@RequestParam("command") String command) {
+    public ResponseEntity<String> execCommandSanity(@RequestParam("command") String command) {
         log.info("execCommandSanity {}", command);
 
-        String escape = command.replaceAll("[;&|`]+","\\u" + Integer.toHexString('/' | 0x10000).substring(1)); //Unicode
+        String escape = command.replaceAll("[;&|`]+", "\\u" + Integer.toHexString('/' | 0x10000).substring(1)); //Unicode
         log.info("Stripped: {}", escape);
 
         Process p = ExecCommand.execCommand(escape);
