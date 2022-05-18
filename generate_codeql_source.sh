@@ -17,7 +17,7 @@ echo "generated delombok classes"
 mvn clean lombok:delombok -Pdlombok
 rm -rf src/main/java/*
 mv target/generated-sources/delombok/* src/main/java/
-mvn clean
+rm -rf target
 
 cd ..
 
