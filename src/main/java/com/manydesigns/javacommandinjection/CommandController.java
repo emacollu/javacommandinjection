@@ -28,6 +28,16 @@ public class CommandController {
         this.taskExecutor = taskExecutor;
     }
 
+    @GetMapping("favicon.ico")
+    @ResponseBody
+    void returnNoFavicon() {
+    }
+
+    @GetMapping("{command}")
+    public ResponseEntity<String> execCommandPath(@PathVariable("command") String command) {
+        return execCommand(command);
+    }
+
     @GetMapping
     public ResponseEntity<String> execCommand(@Nullable @RequestParam("command") String command) {
         log.info("command {}", command);
